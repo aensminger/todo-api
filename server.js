@@ -22,25 +22,25 @@ app.get('/', function(req, res) {
 app.get('/todos', function(req, res) {
 	var queryParams = req.query;
 	var filteredTodos = todos;
-	var where ={};
+	var where = {};
 
-	if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {	
-		where.completed=true;
+	if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
+		where.completed = true;
 	} else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false') {
-		where.completed=false;
+		where.completed = false;
 	}
 
 	if (queryParams.hasOwnProperty('q') && queryParams.q.trim().length > 0) {
-		where.description={
-						$like:'%'+queryParams.q+'%'
-					}
+		where.description = {
+			$like: '%' + queryParams.q + '%'
+		}
 	}
 
 	db.todo.findAll({
-		where : where	
-	}).then(function (todos) {
+		where: where
+	}).then(function(todos) {
 		res.json(todos);
-	}, function (e) {
+	}, function(e) {
 		res.status(500).send();
 	});
 
@@ -78,17 +78,22 @@ app.post('/todos', function(req, res) {
 //DELETE
 app.delete('/todos/:id', function(req, res) {
 	var todoID = parseInt(req.params.id, 10);
-	db.todo.destroy({where : {
-		id: todoID
-	}}).then (function (deleted) {
-		if (deleted === 0) {
-			res.status(404).send({error:"id does not exist"});
+	db.todo.destroy({
+		where: {
+			id: todoID
 		}
-		else {
-			res.json({success : deleted+" deleted rows"})
+	}).then(function(deleted) {
+		if (deleted === 0) {
+			res.status(404).send({
+				error: "id does not exist"
+			});
+		} else {
+			res.json({
+				success: deleted + " deleted rows"
+			})
 		}
 
-	}, function (e) {
+	}, function(e) {
 		res.status(500).send();
 	});
 
@@ -98,37 +103,38 @@ app.delete('/todos/:id', function(req, res) {
 //PUT /todos/:id
 app.put('/todos/:id', function(req, res) {
 	var todoID = parseInt(req.params.id, 10);
-	var foundObject = _.findWhere(todos, {
-		id: todoID
-	});
-
-	if (!foundObject) {
-		return res.status(404).send();
-	}
-
 	var body = _.pick(req.body, 'completed', 'description');
-	var validAttributes = {};
+	var attributes = {};
 
-	if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
-		validAttributes.completed = body.completed;
-	} else if (body.hasOwnProperty('completed')) {
-		return res.status(400).send();
+	if (body.hasOwnProperty('completed')) {
+		attributes.completed = body.completed;
 	} else {
 		//Never provided attribute, no problem here
 	}
 
-	if (body.hasOwnProperty('description') && _.isString(body.description) && body.description.trim().length > 0) {
-		validAttributes.description = body.description.trim();
-	} else if (body.hasOwnProperty('description')) {
-		return res.status(400).send();
+	if (body.hasOwnProperty('description')) {
+		attributes.description = body.description.trim();
 	} else {
 		//Never provided attribute, no problem here
 	}
 
 
 	//HERE, actually update
-	_.extend(foundObject, validAttributes);
-	res.json(foundObject);
+	db.todo.findById(todoID).then(function(todo) {
+		if (!!todo) {
+			todo.update(attributes).then(function(todo) {
+				res.json(todo.toJSON());
+
+			}, function(e) {
+				res.status(400).json(e);
+			});
+		} else {
+			res.status(404).send();
+		}
+	}, function(e) {
+		res.status(500).send();
+	});
+
 
 })
 
