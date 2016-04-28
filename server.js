@@ -50,15 +50,31 @@ app.get('/todos', function(req, res) {
 //GET /todos/2
 app.get('/todos/:id', function(req, res) {
 	todoID = parseInt(req.params.id, 10);
-	var foundObject = _.findWhere(todos, {
+	db.todo.findById(todoID).then(function (todo) {
+		if (!!todo) {
+			res.json(todo.toJSON());
+		}
+		else {
+			res.status(404).send({
+				error :"not found"
+			});
+		}
+	}, function (e) {
+		res.status(500).json(e);
+	})
+
+/*	var foundObject = _.findWhere(todos, {
 		id: todoID
 	});
+
+
+
 	if (foundObject) {
 		res.json(foundObject);
 
 	} else {
 		res.status(404).send();
-	}
+	}*/
 
 });
 
@@ -66,26 +82,11 @@ app.get('/todos/:id', function(req, res) {
 app.post('/todos', function(req, res) {
 	var body = req.body;
 
-	//call create on db.todos
-	//respond with 200 and value of todo
-	//e res.status(400).json(e)
 	db.todo.create(body).then(function(todo) {
 		return res.json(todo);
 	}).catch(function(e) {
 		res.status(400).json(e);
 	});
-
-	/*
-	body = _.pick(body, 'completed', 'description');
-	if (!_.isBoolean(body.completed) || !_.isString(body.description) || body.description.trim().length === 0) {
-		return res.status(400).send();
-	}
-	body.description = body.description.trim();
-	body.id = todoNextId;
-	res.json(body);
-	todos.push(body)
-	todoNextId++;
-	*/
 
 });
 
