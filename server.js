@@ -70,7 +70,11 @@ app.post('/todos', middleware.requireAuthentication, function(req, res) {
 	var body = _.pick(req.body, 'description', 'completed');
 
 	db.todo.create(body).then(function(todo) {
-		return res.json(todo);
+		req.user.addTodo(todo).then (function () {
+			return todo.reload();
+		}).then(function (todo){
+			return res.json(todo);
+		});
 	}).catch(function(e) {
 		res.status(400).json(e);
 	});
@@ -168,7 +172,7 @@ app.post('/users/login', function(req, res) {
 	});
 });
 
-var force = true;
+var force = false;
 db.sequelize.sync({
 	force: force
 }).then(function() {
