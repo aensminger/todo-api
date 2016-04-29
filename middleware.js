@@ -1,14 +1,29 @@
-module.exports = function (db) {
-	return {
-		requireAuthentication: function (req, res, next) {
-			var token = req.get('Auth');
+var cryptojs = require('crypto-js');
 
-			db.user.findByToken(token).then(function (user) {
+module.exports = function(db) {
+	return {
+		requireAuthentication: function(req, res, next) {
+			var token = req.get('Auth') || '';
+			console.log(token);
+			console.log(cryptojs.MD5(token).toString());
+			db.token.findOne({
+				where: {
+					tokenHash: cryptojs.MD5(token).toString()
+				}
+			}).then(function(tokenInstance) {
+				console.log(tokenInstance);
+				if (!tokenInstance) {
+					throw new Error();
+				}
+
+				req.token = tokenInstance;
+
+				return db.user.findByToken(token);
+			}).then(function(user) {
 				req.user = user;
 				next();
-			}, function (e) {
-				console.log('Error in authentication middleware');
-				res.status(401).send();
+			}).catch(function(e) {
+				res.status(401).send(e);
 			});
 		}
 	};
