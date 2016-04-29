@@ -182,7 +182,7 @@ app.post('/users/login', function(req, res) {
 	});
 });
 
-var force = false;
+var force = true;
 db.sequelize.sync({
 	force: force
 }).then(function() {
