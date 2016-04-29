@@ -43,7 +43,6 @@ app.get('/todos', function(req, res) {
 	}, function(e) {
 		res.status(500).send();
 	});
-
 });
 
 //GET /todos/2
@@ -60,19 +59,17 @@ app.get('/todos/:id', function(req, res) {
 	}, function(e) {
 		res.status(500).json(e);
 	})
-
 });
 
 //POST
 app.post('/todos', function(req, res) {
-	var body = req.body;
+	var body = _.pick(req.body, 'description', 'completed');
 
 	db.todo.create(body).then(function(todo) {
 		return res.json(todo);
 	}).catch(function(e) {
 		res.status(400).json(e);
 	});
-
 });
 
 //DELETE
@@ -96,7 +93,6 @@ app.delete('/todos/:id', function(req, res) {
 	}, function(e) {
 		res.status(500).send();
 	});
-
 });
 
 
@@ -134,10 +130,25 @@ app.put('/todos/:id', function(req, res) {
 	}, function(e) {
 		res.status(500).send();
 	});
-
-
 })
 
+
+
+
+////////////////////
+//USERS
+////////////////////
+
+//post /users
+app.post('/users', function (req, res) {
+	var body = _.pick(req.body, 'email', 'password');
+
+	db.user.create(body).then(function(user) {
+		return res.json(user);
+	}).catch(function(e) {
+		res.status(400).json(e);
+	});
+});
 db.sequelize.sync().then(function() {
 	app.listen(PORT, function() {
 		console.log('Express listening on port ' + PORT + '!!');
