@@ -4,6 +4,9 @@ var _ = require('underscore');
 var db = require('./db.js');
 var bcrypt = require ('bcrypt');
 
+var middleware = require ('./middleware.js')(db);
+
+
 var app = express();
 var PORT = process.env.PORT || 3000;
 var todos = [];
@@ -20,7 +23,7 @@ app.get('/', function(req, res) {
 
 
 //GET /todos?completed=true&q=work
-app.get('/todos', function(req, res) {
+app.get('/todos', middleware.requireAuthentication, function(req, res) {
 	var queryParams = req.query;
 	var filteredTodos = todos;
 	var where = {};
@@ -47,7 +50,7 @@ app.get('/todos', function(req, res) {
 });
 
 //GET /todos/2
-app.get('/todos/:id', function(req, res) {
+app.get('/todos/:id', middleware.requireAuthentication, function(req, res) {
 	todoID = parseInt(req.params.id, 10);
 	db.todo.findById(todoID).then(function(todo) {
 		if (!!todo) {
@@ -63,7 +66,7 @@ app.get('/todos/:id', function(req, res) {
 });
 
 //POST
-app.post('/todos', function(req, res) {
+app.post('/todos', middleware.requireAuthentication, function(req, res) {
 	var body = _.pick(req.body, 'description', 'completed');
 
 	db.todo.create(body).then(function(todo) {
@@ -74,7 +77,7 @@ app.post('/todos', function(req, res) {
 });
 
 //DELETE
-app.delete('/todos/:id', function(req, res) {
+app.delete('/todos/:id', middleware.requireAuthentication, function(req, res) {
 	var todoID = parseInt(req.params.id, 10);
 	db.todo.destroy({
 		where: {
@@ -98,7 +101,7 @@ app.delete('/todos/:id', function(req, res) {
 
 
 //PUT /todos/:id
-app.put('/todos/:id', function(req, res) {
+app.put('/todos/:id', middleware.requireAuthentication, function(req, res) {
 	var todoID = parseInt(req.params.id, 10);
 	var body = _.pick(req.body, 'completed', 'description');
 	var attributes = {};
@@ -154,15 +157,15 @@ app.post('/users', function(req, res) {
 app.post('/users/login', function(req, res) {
 	var body = _.pick(req.body, 'email', 'password');
 	db.user.authenticate(body).then (function (user) {
+		console.log('done authing user');
 		var token = user.generateToken('authentication');
 		if (token) {
-			return res.header('Auth', token.json(user.toPublicJSON());
+			return res.header('Auth', token).json(user.toPublicJSON());
 		}
 			res.status(401).send()
 	}, function (e) {
 		res.status(401).send();
-	})
-
+	});
 });
 
 var force = true;
